@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     final response = await http.post(
-      Uri.parse('https://de38-182-1-184-177.ngrok-free.app/api/login'),
+      Uri.parse('https://b67b-182-1-210-225.ngrok-free.app/api/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'noKK': noKKController.text,
@@ -55,11 +55,13 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
+      final nama = responseData['user']['name'];
       final idOrangTua =
           responseData['user']['id_orang_tua']; // Ambil dari user
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('id_orang_tua', idOrangTua);
+      await prefs.setString('name', nama);
 
       Navigator.pushReplacement(
         context,
@@ -75,75 +77,98 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F0), // Latar belakang lembut
+      backgroundColor: Colors.white,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.favorite,
-                  size: 80,
-                  color: Color(0xFFE57373)), // Ikon lebih ramah & hangat
-              const SizedBox(height: 20),
-              const Text(
-                'Selamat Datang di Posyandu',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4E342E),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo Posyandu
+                Image.asset(
+                  'assets/images/posyandu.jpg', // pastikan file logo ini ada
+                  width: 100,
+                  height: 100,
                 ),
-              ),
-              const SizedBox(height: 30),
-              TextField(
-                controller: noKKController,
-                decoration: InputDecoration(
-                  labelText: 'No KK',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
+                const SizedBox(height: 20),
+
+                // Judul Selamat Datang
+                const Text(
+                  'Selamat Datang di Posyandu',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1387AA), // Biru tua
                   ),
-                  prefixIcon:
-                      const Icon(Icons.family_restroom, color: Colors.teal),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  prefixIcon: const Icon(Icons.lock, color: Colors.teal),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (errorMessage.isNotEmpty)
-                Text(errorMessage,
-                    style: const TextStyle(color: Colors.redAccent)),
-              const SizedBox(height: 10),
-              isLoading
-                  ? const CircularProgressIndicator(color: Colors.teal)
-                  : ElevatedButton.icon(
-                      onPressed: login,
-                      icon: const Icon(Icons.login),
-                      label: const Text('Masuk'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 50),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
+                const SizedBox(height: 40),
+
+                // Input No KK
+                TextField(
+                  controller: noKKController,
+                  decoration: InputDecoration(
+                    labelText: 'No KK',
+                    filled: true,
+                    fillColor: const Color(0xFFF1F8FF), // Biru sangat muda
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
                     ),
-            ],
+                    prefixIcon: const Icon(Icons.family_restroom,
+                        color: Color(0xFF1387AA)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Input Password
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    filled: true,
+                    fillColor: const Color(0xFFF1F8FF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon:
+                        const Icon(Icons.lock, color: Color(0xFF1387AA)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Error Message
+                if (errorMessage.isNotEmpty)
+                  Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+
+                const SizedBox(height: 10),
+
+                // Tombol Masuk atau Loading
+                isLoading
+                    ? const CircularProgressIndicator(color: Color(0xFF1387AA))
+                    : ElevatedButton.icon(
+                        onPressed: login,
+                        icon: const Icon(Icons.login),
+                        label: const Text('Masuk'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1387AA),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 50),
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+              ],
+            ),
           ),
         ),
       ),

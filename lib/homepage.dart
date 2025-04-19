@@ -1,7 +1,25 @@
+import 'package:android_posyandu/pdfviewpage.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:android_posyandu/antrian.dart';
+import 'package:android_posyandu/pemeriksaan_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: const HomePage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,173 +29,170 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _formKey = GlobalKey<FormState>();
-
-  int? _selectedJadwal;
-  int? _selectedAnak;
-  String? _message;
-  bool _isLoading = false;
-
-  List<dynamic> _jadwalList = [];
-  List<dynamic> _anakList = [];
+  String _nama = "Pengguna";
 
   @override
   void initState() {
     super.initState();
-    _fetchDropdownData();
+    _loadNama();
   }
 
-  Future<void> _fetchDropdownData() async {
-    final jadwalRes = await http.get(
-      Uri.parse('https://de38-182-1-184-177.ngrok-free.app/api/jadwal'),
-    );
-
+  Future<void> _loadNama() async {
     final prefs = await SharedPreferences.getInstance();
-    final idOrangTua = prefs.getInt('id_orang_tua');
-
-    final anakRes = await http.get(
-      Uri.parse('https://de38-182-1-184-177.ngrok-free.app/api/anak/$idOrangTua'),
-    );
-
-    if (!mounted) return;
 
     setState(() {
-      _jadwalList = jsonDecode(jadwalRes.body);
-      _anakList = jsonDecode(anakRes.body);
-    });
-  }
-
-  Future<void> _submitForm() async {
-    if (_selectedJadwal == null || _selectedAnak == null) {
-      if (!mounted) return;
-      setState(() {
-        _message = 'Silakan pilih jadwal dan anak.';
-      });
-      return;
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-
-    final url = Uri.parse('https://de38-182-1-184-177.ngrok-free.app/api/antrian');
-    final response = await http.post(url, body: {
-      'id_jadwal': _selectedJadwal.toString(),
-      'id_anak': _selectedAnak.toString(),
-    });
-
-    final jsonResponse = jsonDecode(response.body);
-
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-      if (response.statusCode == 201) {
-        _message = "Berhasil daftar! Nomor antrian: ${jsonResponse['nomor_antrian']}";
-      } else {
-        _message = jsonResponse['message'] ?? 'Pendaftaran gagal.';
-      }
+      _nama = prefs.getString('name') ?? 'Pengguna';
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F0),
+      backgroundColor: const Color(0xFFF8FAFB),
       appBar: AppBar(
-        backgroundColor: Colors.teal,
-        title: const Text(
-          'Form Pendaftaran Antrian',
-          style: TextStyle(color: Colors.white),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 90,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundImage: AssetImage('assets/images/avatar.png'),
+              radius: 24,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Hello!",
+                    style: TextStyle(color: Colors.black54, fontSize: 14)),
+                Text(_nama,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const Spacer(),
+            const Icon(Icons.notifications_none, color: Colors.grey),
+          ],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _jadwalList.isEmpty || _anakList.isEmpty
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.teal),
-              )
-            : Form(
-                key: _formKey,
-                child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Menu Pemeriksaan",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 15),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCategoryCard(
+                    context,
+                    "Antrian",
+                    const AntrianPage(),
+                    const Icon(FontAwesomeIcons.listOl,
+                        size: 30, color: Colors.blue),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: _buildCategoryCard(
+                    context,
+                    "Pemeriksaan",
+                    PemeriksaanPage(),
+                    const Icon(FontAwesomeIcons.stethoscope,
+                        size: 30, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            const Text("Jadwal Posyandu",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 15),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => PdfViewerPage()));
+              },
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3EC1F3), Color(0xFF65D5FB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                ),
+                child: Row(
                   children: [
-                    DropdownButtonFormField<int>(
-                      value: _selectedJadwal,
-                      items: _jadwalList.map<DropdownMenuItem<int>>((item) {
-                        return DropdownMenuItem<int>(
-                          value: item['id_jadwal'],
-                          child: Text(
-                            '${item['tanggal']}/${item['bulan']}/${item['tahun']}',
-                            style: const TextStyle(color: Colors.brown),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => _selectedJadwal = value),
-                      decoration: InputDecoration(
-                        labelText: 'Pilih Jadwal Posyandu',
-                        prefixIcon: const Icon(Icons.calendar_month, color: Colors.teal),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                    const CircleAvatar(
+                      backgroundImage: AssetImage('assets/images/posyandu.jpg'),
+                      radius: 30,
+                    ),
+                    const SizedBox(width: 15),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Periksa Jadwal Posyandu",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 5),
+                          Text("Klik untuk melihat jadwal terbaru",
+                              style: TextStyle(color: Colors.white70)),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      value: _selectedAnak,
-                      items: _anakList.map<DropdownMenuItem<int>>((item) {
-                        return DropdownMenuItem<int>(
-                          value: item['id_anak'],
-                          child: Text(
-                            item['nama'],
-                            style: const TextStyle(color: Colors.brown),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => _selectedAnak = value),
-                      decoration: InputDecoration(
-                        labelText: 'Pilih Anak',
-                        prefixIcon: const Icon(Icons.child_care, color: Colors.teal),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _isLoading
-                        ? const CircularProgressIndicator(color: Colors.teal)
-                        : ElevatedButton.icon(
-                            onPressed: _submitForm,
-                            icon: const Icon(Icons.send),
-                            label: const Text('Daftar Sekarang'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 15, horizontal: 40),
-                              textStyle: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                    if (_message != null) ...[
-                      const SizedBox(height: 20),
-                      Text(
-                        _message!,
-                        style: TextStyle(
-                          color: _message!.contains('Berhasil') ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ]
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(
+      BuildContext context, String title, Widget page, Icon icon) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon,
+            const SizedBox(height: 10),
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
